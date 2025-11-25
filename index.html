@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:;">
+  <title>Twitch Bot Command Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Custom Title Bar -->
+  <div class="title-bar">
+    <div class="title-bar-drag">
+      <div class="app-logo">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/>
+        </svg>
+        <span>Bot Command Manager</span>
+      </div>
+    </div>
+    <div class="window-controls">
+      <button class="window-btn" id="minimize-btn">
+        <svg viewBox="0 0 12 12"><rect y="5" width="12" height="2"/></svg>
+      </button>
+      <button class="window-btn" id="maximize-btn">
+        <svg viewBox="0 0 12 12"><rect x="1" y="1" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+      </button>
+      <button class="window-btn close-btn" id="close-btn">
+        <svg viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.5"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar" id="sidebar">
+      <button class="sidebar-toggle" id="sidebar-toggle" title="Toggle sidebar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="collapse-icon">
+          <polyline points="11 17 6 12 11 7"/>
+          <polyline points="18 17 13 12 18 7"/>
+        </svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="expand-icon">
+          <polyline points="13 17 18 12 13 7"/>
+          <polyline points="6 17 11 12 6 7"/>
+        </svg>
+      </button>
+      <div class="nav-section">
+        <button class="nav-btn active" data-view="generator">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+          <span>Generator</span>
+        </button>
+        <button class="nav-btn" data-view="templates">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <path d="M3 9h18M9 21V9"/>
+          </svg>
+          <span>Templates</span>
+        </button>
+        <button class="nav-btn" data-view="streamers">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          <span>Streamers</span>
+        </button>
+      </div>
+      <div class="nav-section nav-bottom">
+        <button class="nav-btn" data-view="settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+          <span>Settings</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Generator View -->
+      <section class="view active" id="generator-view">
+        <header class="view-header">
+          <h1>Command Generator</h1>
+          <p>Select a template and streamers to generate your bot command</p>
+        </header>
+
+        <div class="generator-grid">
+          <!-- Template Selection -->
+          <div class="card template-select-card">
+            <h2>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <path d="M3 9h18M9 21V9"/>
+              </svg>
+              Select Template
+            </h2>
+            <div class="template-dropdown">
+              <select id="template-select">
+                <option value="">-- Choose a template --</option>
+              </select>
+            </div>
+            <div class="template-preview" id="template-preview">
+              <p class="placeholder-text">Select a template to see preview</p>
+            </div>
+          </div>
+
+          <!-- Streamer Selection -->
+          <div class="card streamer-select-card">
+            <h2>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+              Select Streamers
+            </h2>
+            <div class="streamer-list" id="streamer-select-list">
+              <p class="placeholder-text">No streamers configured yet</p>
+            </div>
+          </div>
+
+          <!-- Generated Command -->
+          <div class="card output-card">
+            <h2>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="4 17 10 11 4 5"/>
+                <line x1="12" y1="19" x2="20" y2="19"/>
+              </svg>
+              Generated Command
+            </h2>
+            <div class="command-output-wrapper">
+              <div class="language-selector">
+                <label for="language-select">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="2" y1="12" x2="22" y2="12"/>
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                  </svg>
+                  Sprache
+                </label>
+                <div class="language-toggle" id="language-toggle">
+                  <button class="lang-btn active" data-lang="de">DE</button>
+                  <button class="lang-btn" data-lang="en">EN</button>
+                </div>
+              </div>
+              <div class="command-output">
+                <code id="generated-command">Select a template and streamers to generate command</code>
+                <button class="copy-btn" id="copy-command-btn" disabled>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                  </svg>
+                  Copy
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Templates View -->
+      <section class="view" id="templates-view">
+        <header class="view-header">
+          <h1>Command Templates</h1>
+          <p>Create and manage your bot command templates</p>
+        </header>
+
+        <div class="template-editor">
+          <div class="card editor-card">
+            <h2>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+              </svg>
+              Create Template
+            </h2>
+            <form id="template-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="template-name">Template Name</label>
+                  <input type="text" id="template-name" placeholder="e.g., Among Us Session" required>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="template-command">Command</label>
+                  <div class="input-prefix">
+                    <span>!</span>
+                    <input type="text" id="template-command" placeholder="cmd" required>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="template-firstarg">First Argument</label>
+                  <input type="text" id="template-firstarg" placeholder="who (optional)">
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="template-text">Template Text</label>
+                <textarea id="template-text" placeholder="is playing Among Us in the senior lobby with {streamer}" rows="3" required></textarea>
+                <p class="hint">Use <code>{streamer}</code> as placeholder for selected streamers</p>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn btn-secondary" id="clear-form-btn">Clear</button>
+                <button type="submit" class="btn btn-primary">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                    <polyline points="17 21 17 13 7 13 7 21"/>
+                    <polyline points="7 3 7 8 15 8"/>
+                  </svg>
+                  Save Template
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div class="card templates-list-card">
+            <h2>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="8" y1="6" x2="21" y2="6"/>
+                <line x1="8" y1="12" x2="21" y2="12"/>
+                <line x1="8" y1="18" x2="21" y2="18"/>
+                <line x1="3" y1="6" x2="3.01" y2="6"/>
+                <line x1="3" y1="12" x2="3.01" y2="12"/>
+                <line x1="3" y1="18" x2="3.01" y2="18"/>
+              </svg>
+              Saved Templates
+            </h2>
+            <div class="templates-list" id="templates-list">
+              <p class="placeholder-text">No templates created yet</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Streamers View -->
+      <section class="view" id="streamers-view">
+        <header class="view-header">
+          <h1>Streamer List</h1>
+          <p>Manage your list of Twitch streamers</p>
+        </header>
+
+        <div class="streamers-editor">
+          <div class="card add-streamer-card">
+            <h2>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="8.5" cy="7" r="4"/>
+                <line x1="20" y1="8" x2="20" y2="14"/>
+                <line x1="23" y1="11" x2="17" y2="11"/>
+              </svg>
+              Add Streamer
+            </h2>
+            <div class="search-container">
+              <div class="search-input-wrapper">
+                <div class="input-prefix">
+                  <span>@</span>
+                  <input type="text" id="streamer-search" placeholder="Search Twitch streamers..." autocomplete="off">
+                </div>
+                <div class="search-status" id="search-status"></div>
+              </div>
+              <div class="search-results" id="search-results">
+                <!-- Twitch API search results appear here -->
+              </div>
+            </div>
+            <form id="streamer-form" class="manual-add-form">
+              <p class="manual-add-label">Or add manually:</p>
+              <div class="form-row inline">
+                <div class="form-group flex-grow">
+                  <div class="input-prefix">
+                    <span>@</span>
+                    <input type="text" id="streamer-name" placeholder="StreamerName" required>
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-secondary">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                  Add
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div class="card streamers-list-card">
+            <h2>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+              Your Streamers
+            </h2>
+            <div class="streamers-list" id="streamers-list">
+              <p class="placeholder-text">No streamers added yet</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Settings View -->
+      <section class="view" id="settings-view">
+        <header class="view-header">
+          <h1>Settings</h1>
+          <p>Configure your Twitch API credentials and app preferences</p>
+        </header>
+
+        <div class="settings-grid">
+          <!-- Twitch API Settings -->
+          <div class="card settings-card">
+            <h2>
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/>
+              </svg>
+              Twitch API
+            </h2>
+            <p class="settings-description">
+              Connect to the Twitch API to search for streamers. 
+              <a href="#" id="twitch-dev-link" class="link">Get your credentials from Twitch Developer Console →</a>
+            </p>
+            <form id="twitch-settings-form">
+              <div class="form-group">
+                <label for="twitch-client-id">Client ID</label>
+                <input type="text" id="twitch-client-id" placeholder="Your Twitch Client ID">
+              </div>
+              <div class="form-group">
+                <label for="twitch-client-secret">Client Secret</label>
+                <div class="password-input">
+                  <input type="password" id="twitch-client-secret" placeholder="Your Twitch Client Secret">
+                  <button type="button" class="toggle-visibility" id="toggle-secret">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="eye-icon">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="eye-off-icon" style="display:none;">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                      <line x1="1" y1="1" x2="23" y2="23"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div class="api-status" id="api-status">
+                <span class="status-indicator"></span>
+                <span class="status-text">Not configured</span>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn btn-secondary" id="test-api-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                  </svg>
+                  Test Connection
+                </button>
+                <button type="submit" class="btn btn-primary">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                    <polyline points="17 21 17 13 7 13 7 21"/>
+                    <polyline points="7 3 7 8 15 8"/>
+                  </svg>
+                  Save
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Theme Settings -->
+          <div class="card settings-card theme-card">
+            <h2>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="5"/>
+                <line x1="12" y1="1" x2="12" y2="3"/>
+                <line x1="12" y1="21" x2="12" y2="23"/>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                <line x1="1" y1="12" x2="3" y2="12"/>
+                <line x1="21" y1="12" x2="23" y2="12"/>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+              </svg>
+              Appearance
+            </h2>
+            <div class="theme-selector">
+              <label>Preset Themes</label>
+              <div class="theme-options" id="theme-options">
+                <button class="theme-option active" data-theme="twitch-dark" title="Twitch Dark">
+                  <div class="theme-preview twitch-dark-preview"></div>
+                  <span>Twitch</span>
+                </button>
+                <button class="theme-option" data-theme="midnight" title="Midnight">
+                  <div class="theme-preview midnight-preview"></div>
+                  <span>Midnight</span>
+                </button>
+                <button class="theme-option" data-theme="cyber" title="Cyber">
+                  <div class="theme-preview cyber-preview"></div>
+                  <span>Cyber</span>
+                </button>
+                <button class="theme-option" data-theme="forest" title="Forest">
+                  <div class="theme-preview forest-preview"></div>
+                  <span>Forest</span>
+                </button>
+                <button class="theme-option" data-theme="crimson" title="Crimson">
+                  <div class="theme-preview crimson-preview"></div>
+                  <span>Crimson</span>
+                </button>
+                <button class="theme-option" data-theme="ocean" title="Ocean">
+                  <div class="theme-preview ocean-preview"></div>
+                  <span>Ocean</span>
+                </button>
+                <button class="theme-option" data-theme="sunset" title="Sunset">
+                  <div class="theme-preview sunset-preview"></div>
+                  <span>Sunset</span>
+                </button>
+                <button class="theme-option" data-theme="custom" title="Custom">
+                  <div class="theme-preview custom-preview" id="custom-preview"></div>
+                  <span>Custom</span>
+                </button>
+              </div>
+            </div>
+            <div class="custom-color-section" id="custom-color-section">
+              <label>Custom Accent Color</label>
+              <div class="color-picker-row">
+                <input type="color" id="custom-color-picker" value="#9147ff">
+                <input type="text" id="custom-color-hex" value="#9147ff" maxlength="7" placeholder="#9147ff">
+                <button class="btn btn-secondary" id="apply-custom-color">Apply</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast">
+    <span class="toast-message"></span>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
+

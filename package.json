@@ -1,0 +1,23 @@
+{
+  "name": "twitch-bot-command-manager",
+  "version": "1.0.0",
+  "description": "A stylish Electron app for managing Twitch bot commands with templates",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --enable-logging"
+  },
+  "keywords": [
+    "twitch",
+    "bot",
+    "commands",
+    "electron",
+    "streaming"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^33.0.0"
+  }
+}
+
