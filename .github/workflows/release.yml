@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+
 jobs:
   build:
     strategy:
@@ -103,8 +106,6 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
       - name: Download all artifacts
