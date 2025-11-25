@@ -18,7 +18,10 @@
     "electron",
     "streaming"
   ],
-  "author": "kyoya-de",
+  "author": {
+    "name": "kyoya-de",
+    "email": "kyoya-de@users.noreply.github.com"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
