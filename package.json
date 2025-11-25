@@ -47,14 +47,14 @@
         "nsis",
         "portable"
       ],
-      "icon": "assets/icon.ico"
+      "icon": "assets/icon.png"
     },
     "mac": {
       "target": [
         "dmg",
         "zip"
       ],
-      "icon": "assets/icon.icns",
+      "icon": "assets/icon.png",
       "category": "public.app-category.utilities"
     },
     "linux": {
@@ -62,7 +62,7 @@
         "AppImage",
         "deb"
       ],
-      "icon": "assets",
+      "icon": "assets/icon.png",
       "category": "Utility"
     },
     "nsis": {
