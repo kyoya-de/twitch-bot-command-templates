@@ -123,8 +123,6 @@ function reuseHistoryEntry(id) {
   
   updateStreamerSelectList();
   switchView('generator');
-  
-  showToast('History entry loaded - click Generate to create command');
 }
 
 async function copyHistoryEntry(id) {
