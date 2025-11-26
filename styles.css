@@ -381,6 +381,137 @@ body {
   grid-column: 1 / -1;
 }
 
+/* History Page */
+.history-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding: 16px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--border-radius);
+}
+
+.history-stats {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.history-item {
+  padding: 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--border-radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.history-item:hover {
+  border-color: var(--accent-primary);
+}
+
+.history-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.history-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.history-item-date {
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.history-item-date svg {
+  width: 14px;
+  height: 14px;
+}
+
+.history-item-template {
+  font-size: 12px;
+  color: var(--accent-secondary);
+  background: var(--bg-hover);
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.history-item-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.history-item-actions button {
+  padding: 6px 12px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all var(--transition-fast);
+}
+
+.history-item-actions button:hover {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: white;
+}
+
+.history-item-actions button svg {
+  width: 14px;
+  height: 14px;
+}
+
+.history-item-command {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--accent-secondary);
+  background: var(--bg-dark);
+  padding: 12px;
+  border-radius: 6px;
+  word-break: break-all;
+  margin-bottom: 8px;
+}
+
+.history-item-streamers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.history-streamer-tag {
+  padding: 3px 8px;
+  background: var(--bg-hover);
+  border-radius: 10px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.history-streamer-tag::before {
+  content: '@';
+  color: var(--accent-primary);
+}
+
 .template-dropdown select {
   width: 100%;
   padding: 14px 16px;
@@ -561,6 +692,27 @@ body {
 .lang-btn.active {
   background: var(--accent-primary);
   color: white;
+}
+
+/* Generator Controls */
+.generator-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.generate-btn {
+  padding: 12px 28px;
+  font-size: 15px;
+}
+
+.generate-btn svg {
+  width: 18px;
+  height: 18px;
 }
 
 .output-section {
@@ -1727,6 +1879,51 @@ body {
 
 .theme-card {
   grid-column: 1 / -1;
+}
+
+/* DateTime Format Section */
+.datetime-format-section {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.datetime-format-section > label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.format-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.format-options select {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.format-options select:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+}
+
+#datetime-preview {
+  color: var(--accent-secondary);
+  font-family: 'JetBrains Mono', monospace;
 }
 
 /* ===================================

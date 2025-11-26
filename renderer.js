@@ -8,11 +8,14 @@ let appData = {
   templates: [],
   streamers: [],
   groups: [],
+  history: [],
   language: 'de', // Default to German
   settings: {
     twitchClientId: '',
     twitchClientSecret: '',
-    theme: 'twitch-dark'
+    theme: 'twitch-dark',
+    dateFormat: 'system',
+    timeFormat: 'system'
   }
 };
 
@@ -53,6 +56,15 @@ const elements = {
   copyCommandBtn: document.getElementById('copy-command-btn'),
   copyTextBtn: document.getElementById('copy-text-btn'),
   languageToggle: document.getElementById('language-toggle'),
+  generateBtn: document.getElementById('generate-btn'),
+  historyList: document.getElementById('history-list'),
+  clearHistoryBtn: document.getElementById('clear-history-btn'),
+  historyStats: document.getElementById('history-stats'),
+  
+  // Date/Time format
+  dateFormat: document.getElementById('date-format'),
+  timeFormat: document.getElementById('time-format'),
+  datetimePreview: document.getElementById('datetime-preview'),
   
   // Templates
   templateForm: document.getElementById('template-form'),
@@ -123,6 +135,15 @@ async function init() {
   }
   if (!appData.groups) {
     appData.groups = [];
+  }
+  if (!appData.history) {
+    appData.history = [];
+  }
+  if (!appData.settings.dateFormat) {
+    appData.settings.dateFormat = 'system';
+  }
+  if (!appData.settings.timeFormat) {
+    appData.settings.timeFormat = 'system';
   }
   
   // Setup event listeners
@@ -197,9 +218,11 @@ function setupWindowControls() {
 // Generator
 // ===================================
 function setupGenerator() {
-  elements.templateSelect.addEventListener('change', updateGeneratedCommand);
+  elements.templateSelect.addEventListener('change', updateTemplatePreview);
   elements.copyCommandBtn.addEventListener('click', copyCommand);
   elements.copyTextBtn.addEventListener('click', copyText);
+  elements.generateBtn.addEventListener('click', generateCommand);
+  elements.clearHistoryBtn.addEventListener('click', clearHistory);
   
   // Language toggle
   elements.languageToggle.querySelectorAll('.lang-btn').forEach(btn => {
@@ -208,6 +231,10 @@ function setupGenerator() {
   
   // Clear selection button
   elements.clearSelectionBtn.addEventListener('click', clearStreamerSelection);
+  
+  // Date/time format changes
+  elements.dateFormat.addEventListener('change', updateDateTimeFormat);
+  elements.timeFormat.addEventListener('change', updateDateTimeFormat);
 }
 
 function clearStreamerSelection() {
@@ -374,17 +401,17 @@ function selectGroup(groupId) {
   showToast(`Selected ${group.name}`);
 }
 
-function updateGeneratedCommand() {
-  updateTemplatePreview();
-  
+async function generateCommand() {
   const templateId = elements.templateSelect.value;
   const template = appData.templates.find(t => t.id === templateId);
   
   if (!template) {
-    elements.generatedCommand.textContent = 'Select a template and streamers to generate command';
-    elements.generatedText.textContent = 'Select a template and streamers to generate text';
-    elements.copyCommandBtn.disabled = true;
-    elements.copyTextBtn.disabled = true;
+    showToast('Please select a template');
+    return;
+  }
+  
+  if (selectedStreamers.size === 0) {
+    showToast('Please select at least one streamer');
     return;
   }
   
@@ -393,6 +420,27 @@ function updateGeneratedCommand() {
   elements.generatedText.textContent = textOnly;
   elements.copyCommandBtn.disabled = false;
   elements.copyTextBtn.disabled = false;
+  
+  // Add to history
+  const historyEntry = {
+    id: generateId(),
+    timestamp: Date.now(),
+    templateId: template.id,
+    streamerIds: Array.from(selectedStreamers),
+    language: appData.language
+  };
+  
+  // Add to beginning of history (newest first)
+  appData.history.unshift(historyEntry);
+  
+  // Keep only last 50 entries
+  if (appData.history.length > 50) {
+    appData.history = appData.history.slice(0, 50);
+  }
+  
+  await saveData();
+  renderHistory();
+  showToast('Command generated!');
 }
 
 function buildCommand(template) {
@@ -446,6 +494,233 @@ async function copyText() {
   const text = elements.generatedText.textContent;
   await window.electronAPI.copyToClipboard(text);
   showToast('Text copied to clipboard!');
+}
+
+// ===================================
+// History
+// ===================================
+function renderHistory() {
+  // Update stats
+  const count = appData.history.length;
+  elements.historyStats.innerHTML = `<span>${count} ${count === 1 ? 'entry' : 'entries'}</span>`;
+  
+  if (count === 0) {
+    elements.historyList.innerHTML = '<p class="placeholder-text">No commands generated yet</p>';
+    return;
+  }
+  
+  elements.historyList.innerHTML = appData.history.map(entry => {
+    const template = appData.templates.find(t => t.id === entry.templateId);
+    const templateName = template ? template.name : '(Deleted template)';
+    
+    // Get current streamer names (using references)
+    const streamers = entry.streamerIds
+      .map(id => appData.streamers.find(s => s.id === id))
+      .filter(Boolean);
+    
+    // Rebuild command with current streamer names
+    const commandText = template ? buildCommandFromHistory(entry) : '(Template deleted)';
+    
+    return `
+      <div class="history-item" data-id="${entry.id}">
+        <div class="history-item-header">
+          <div class="history-item-meta">
+            <span class="history-item-date">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+              ${formatDateTime(entry.timestamp)}
+            </span>
+            <span class="history-item-template">${escapeHtml(templateName)}</span>
+          </div>
+          <div class="history-item-actions">
+            <button class="reuse-btn" title="Load into generator">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 4v6h6"/>
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+              </svg>
+              Reuse
+            </button>
+            <button class="copy-history-btn" title="Copy command">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+              Copy
+            </button>
+          </div>
+        </div>
+        <div class="history-item-command">${escapeHtml(commandText)}</div>
+        <div class="history-item-streamers">
+          ${streamers.map(s => `<span class="history-streamer-tag">${escapeHtml(s.name)}</span>`).join('')}
+          ${entry.streamerIds.length > streamers.length ? `<span class="history-streamer-tag" style="opacity: 0.5">${entry.streamerIds.length - streamers.length} removed</span>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+  
+  // Add click handlers
+  elements.historyList.querySelectorAll('.history-item').forEach(item => {
+    const id = item.dataset.id;
+    item.querySelector('.reuse-btn').addEventListener('click', () => reuseHistoryEntry(id));
+    item.querySelector('.copy-history-btn').addEventListener('click', () => copyHistoryEntry(id));
+  });
+}
+
+function buildCommandFromHistory(entry) {
+  const template = appData.templates.find(t => t.id === entry.templateId);
+  if (!template) return '';
+  
+  // Use the stored language for this entry
+  const langConfig = languages[entry.language] || languages.de;
+  
+  // Get current streamer names
+  const streamerNames = entry.streamerIds
+    .map(id => appData.streamers.find(s => s.id === id))
+    .filter(Boolean)
+    .map(s => `@${s.name}`);
+  
+  // Build streamer string
+  let streamerStr = '';
+  if (streamerNames.length === 0) {
+    streamerStr = '';
+  } else if (streamerNames.length === 1) {
+    streamerStr = streamerNames[0];
+  } else if (streamerNames.length === 2) {
+    streamerStr = `${streamerNames[0]} ${langConfig.conjunction} ${streamerNames[1]}`;
+  } else {
+    const last = streamerNames.pop();
+    const comma = langConfig.oxfordComma ? ',' : '';
+    streamerStr = `${streamerNames.join(', ')}${comma} ${langConfig.conjunction} ${last}`;
+  }
+  
+  // Build full command
+  let cmd = `!${template.command}`;
+  if (template.firstArg) cmd += ` ${template.firstArg}`;
+  cmd += ` ${template.text.replace(/\{streamer\}/gi, streamerStr)}`;
+  
+  return cmd;
+}
+
+function reuseHistoryEntry(id) {
+  const entry = appData.history.find(h => h.id === id);
+  if (!entry) return;
+  
+  // Set template
+  if (appData.templates.find(t => t.id === entry.templateId)) {
+    elements.templateSelect.value = entry.templateId;
+    updateTemplatePreview();
+  }
+  
+  // Set language
+  setLanguage(entry.language);
+  
+  // Set selected streamers
+  selectedStreamers.clear();
+  entry.streamerIds.forEach(id => {
+    if (appData.streamers.find(s => s.id === id)) {
+      selectedStreamers.add(id);
+    }
+  });
+  
+  updateStreamerSelectList();
+  
+  // Switch to generator page
+  switchView('generator');
+  
+  showToast('History entry loaded - click Generate to create command');
+}
+
+async function copyHistoryEntry(id) {
+  const entry = appData.history.find(h => h.id === id);
+  if (!entry) return;
+  
+  const command = buildCommandFromHistory(entry);
+  await window.electronAPI.copyToClipboard(command);
+  showToast('Command copied!');
+}
+
+async function clearHistory() {
+  if (appData.history.length === 0) return;
+  
+  appData.history = [];
+  await saveData();
+  renderHistory();
+  showToast('History cleared');
+}
+
+// ===================================
+// Date/Time Formatting
+// ===================================
+function formatDateTime(timestamp) {
+  const date = new Date(timestamp);
+  const dateFormat = appData.settings.dateFormat || 'system';
+  const timeFormat = appData.settings.timeFormat || 'system';
+  
+  let dateStr, timeStr;
+  
+  // Format date
+  if (dateFormat === 'system') {
+    dateStr = date.toLocaleDateString();
+  } else {
+    dateStr = formatDateCustom(date, dateFormat);
+  }
+  
+  // Format time
+  if (timeFormat === 'system') {
+    timeStr = date.toLocaleTimeString();
+  } else {
+    timeStr = formatTimeCustom(date, timeFormat);
+  }
+  
+  return `${dateStr} ${timeStr}`;
+}
+
+function formatDateCustom(date, format) {
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const monthName = monthNames[date.getMonth()];
+  
+  switch (format) {
+    case 'DD.MM.YYYY': return `${day}.${month}.${year}`;
+    case 'MM/DD/YYYY': return `${month}/${day}/${year}`;
+    case 'YYYY-MM-DD': return `${year}-${month}-${day}`;
+    case 'DD MMM YYYY': return `${day} ${monthName} ${year}`;
+    default: return date.toLocaleDateString();
+  }
+}
+
+function formatTimeCustom(date, format) {
+  const hours24 = date.getHours();
+  const hours12 = hours24 % 12 || 12;
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+  const ampm = hours24 >= 12 ? 'PM' : 'AM';
+  const hours24Str = String(hours24).padStart(2, '0');
+  const hours12Str = String(hours12).padStart(2, '0');
+  
+  switch (format) {
+    case 'HH:mm': return `${hours24Str}:${minutes}`;
+    case 'HH:mm:ss': return `${hours24Str}:${minutes}:${seconds}`;
+    case 'hh:mm A': return `${hours12Str}:${minutes} ${ampm}`;
+    case 'hh:mm:ss A': return `${hours12Str}:${minutes}:${seconds} ${ampm}`;
+    default: return date.toLocaleTimeString();
+  }
+}
+
+async function updateDateTimeFormat() {
+  appData.settings.dateFormat = elements.dateFormat.value;
+  appData.settings.timeFormat = elements.timeFormat.value;
+  await saveData();
+  updateDateTimePreview();
+  renderHistory();
+}
+
+function updateDateTimePreview() {
+  elements.datetimePreview.textContent = formatDateTime(Date.now());
 }
 
 // ===================================
@@ -1096,6 +1371,11 @@ function renderSettings() {
     elements.customColorHex.value = appData.settings.customColor;
     updateCustomPreview(appData.settings.customColor);
   }
+  
+  // Update date/time format
+  elements.dateFormat.value = appData.settings.dateFormat || 'system';
+  elements.timeFormat.value = appData.settings.timeFormat || 'system';
+  updateDateTimePreview();
 }
 
 async function saveTwitchSettings(e) {
@@ -1341,10 +1621,11 @@ function renderAll() {
   renderStreamersList();
   renderGroupsList();
   renderGroupStreamerSelect();
+  renderHistory();
   updateTemplateSelect();
   updateStreamerSelectList();
   updateLanguageToggle();
-  updateGeneratedCommand();
+  updateTemplatePreview();
   renderSettings();
   
   // Apply theme (including custom colors if needed)
