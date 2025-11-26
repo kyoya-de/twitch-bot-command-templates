@@ -47,7 +47,9 @@ const elements = {
   templatePreview: document.getElementById('template-preview'),
   streamerSelectList: document.getElementById('streamer-select-list'),
   generatedCommand: document.getElementById('generated-command'),
+  generatedText: document.getElementById('generated-text'),
   copyCommandBtn: document.getElementById('copy-command-btn'),
+  copyTextBtn: document.getElementById('copy-text-btn'),
   languageToggle: document.getElementById('language-toggle'),
   
   // Templates
@@ -193,6 +195,7 @@ function setupWindowControls() {
 function setupGenerator() {
   elements.templateSelect.addEventListener('change', updateGeneratedCommand);
   elements.copyCommandBtn.addEventListener('click', copyCommand);
+  elements.copyTextBtn.addEventListener('click', copyText);
   
   // Language toggle
   elements.languageToggle.querySelectorAll('.lang-btn').forEach(btn => {
@@ -375,13 +378,17 @@ function updateGeneratedCommand() {
   
   if (!template) {
     elements.generatedCommand.textContent = 'Select a template and streamers to generate command';
+    elements.generatedText.textContent = 'Select a template and streamers to generate text';
     elements.copyCommandBtn.disabled = true;
+    elements.copyTextBtn.disabled = true;
     return;
   }
   
-  const command = buildCommand(template);
+  const { command, textOnly } = buildCommand(template);
   elements.generatedCommand.textContent = command;
+  elements.generatedText.textContent = textOnly;
   elements.copyCommandBtn.disabled = false;
+  elements.copyTextBtn.disabled = false;
 }
 
 function buildCommand(template) {
@@ -417,17 +424,24 @@ function buildCommand(template) {
   }
   
   // Replace placeholder
-  let text = template.text.replace(/\{streamer\}/gi, streamerStr);
+  let textOnly = template.text.replace(/\{streamer\}/gi, streamerStr);
   
-  cmd += ` ${text}`;
+  cmd += ` ${textOnly}`;
   
-  return cmd;
+  // Return both full command and text-only
+  return { command: cmd, textOnly: textOnly };
 }
 
 async function copyCommand() {
   const command = elements.generatedCommand.textContent;
   await window.electronAPI.copyToClipboard(command);
   showToast('Command copied to clipboard!');
+}
+
+async function copyText() {
+  const text = elements.generatedText.textContent;
+  await window.electronAPI.copyToClipboard(text);
+  showToast('Text copied to clipboard!');
 }
 
 // ===================================

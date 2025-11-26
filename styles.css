@@ -563,14 +563,36 @@ body {
   color: white;
 }
 
+.output-section {
+  margin-bottom: 16px;
+}
+
+.output-section:last-child {
+  margin-bottom: 0;
+}
+
+.output-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
 .command-output {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 20px;
+  padding: 16px 20px;
   background: var(--bg-elevated);
   border: 1px solid var(--border-accent);
   border-radius: var(--border-radius-sm);
+}
+
+.text-only-output {
+  border-color: var(--border-subtle);
 }
 
 .command-output code {
