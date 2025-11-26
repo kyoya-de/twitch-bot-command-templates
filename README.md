@@ -114,10 +114,20 @@ twitch-bot-command-templates/
 ├── preload.js       # Secure IPC bridge
 ├── index.html       # App UI structure
 ├── styles.css       # Styling & themes
-├── renderer.js      # Frontend logic
 ├── package.json     # Project config
 ├── LICENSE          # MIT License
-└── assets/          # Icons & images
+├── assets/          # Icons & images
+└── js/              # Modular frontend code
+    ├── state.js     # Shared state & DOM elements
+    ├── utils.js     # Utility functions
+    ├── navigation.js # Navigation & window controls
+    ├── generator.js # Command generator page
+    ├── templates.js # Templates management page
+    ├── streamers.js # Streamers management page
+    ├── groups.js    # Streamer groups logic
+    ├── history.js   # Command history page
+    ├── settings.js  # Settings page & themes
+    └── app.js       # Application entry point
 ```
 
 ## License
