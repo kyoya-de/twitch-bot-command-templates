@@ -28,6 +28,7 @@ let editingGroupId = null;
 let selectedGroupStreamers = new Set();
 let searchDebounceTimer = null;
 let twitchAuthenticated = false;
+let streamerValidationStatus = {}; // { streamerId: 'valid' | 'invalid' | 'unknown' }
 
 // DOM Elements
 const elements = {
@@ -68,6 +69,8 @@ const elements = {
   streamerSearch: document.getElementById('streamer-search'),
   searchResults: document.getElementById('search-results'),
   searchStatus: document.getElementById('search-status'),
+  validateStreamersBtn: document.getElementById('validate-streamers-btn'),
+  validationStatus: document.getElementById('validation-status'),
   
   // Groups
   groupForm: document.getElementById('group-form'),
@@ -553,6 +556,7 @@ function renderTemplatesList() {
 // ===================================
 function setupStreamers() {
   elements.streamerForm.addEventListener('submit', addStreamer);
+  elements.validateStreamersBtn.addEventListener('click', validateAllStreamers);
   
   // Twitch search with debounce
   elements.streamerSearch.addEventListener('input', (e) => {
@@ -697,17 +701,36 @@ function renderStreamersList() {
     return;
   }
   
-  elements.streamersList.innerHTML = appData.streamers.map(streamer => `
-    <div class="streamer-item" data-id="${streamer.id}">
-      <span class="streamer-item-name">${escapeHtml(streamer.name)}</span>
-      <button class="delete-btn" title="Remove">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="18" y1="6" x2="6" y2="18"/>
-          <line x1="6" y1="6" x2="18" y2="18"/>
-        </svg>
-      </button>
-    </div>
-  `).join('');
+  elements.streamersList.innerHTML = appData.streamers.map(streamer => {
+    const status = streamerValidationStatus[streamer.id] || 'unknown';
+    const statusClass = status === 'valid' ? 'valid' : (status === 'invalid' ? 'invalid' : '');
+    
+    return `
+      <div class="streamer-item ${statusClass}" data-id="${streamer.id}">
+        <span class="streamer-item-name">${escapeHtml(streamer.name)}</span>
+        <span class="valid-badge" title="Valid Twitch user">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+        </span>
+        <span class="invalid-badge" title="Username not found on Twitch">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          Invalid
+        </span>
+        <button class="delete-btn" title="Remove">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+    `;
+  }).join('');
   
   // Add click handlers
   elements.streamersList.querySelectorAll('.streamer-item').forEach(item => {
@@ -717,6 +740,78 @@ function renderStreamersList() {
   
   // Also update group streamer select
   renderGroupStreamerSelect();
+}
+
+async function validateAllStreamers() {
+  if (!twitchAuthenticated) {
+    showToast('Configure Twitch API in Settings first');
+    return;
+  }
+  
+  if (appData.streamers.length === 0) {
+    showToast('No streamers to validate');
+    return;
+  }
+  
+  // Show loading state
+  elements.validateStreamersBtn.disabled = true;
+  elements.validateStreamersBtn.classList.add('validating');
+  elements.validationStatus.className = 'validation-status';
+  elements.validationStatus.textContent = 'Validating...';
+  elements.validationStatus.classList.add('show');
+  
+  try {
+    // Get all streamer names
+    const usernames = appData.streamers.map(s => s.name);
+    
+    // Call Twitch API
+    const result = await window.electronAPI.twitchValidateUsers(usernames, appData.settings.twitchClientId);
+    
+    if (!result.success) {
+      if (result.needsReauth) {
+        await initTwitchApi();
+        if (twitchAuthenticated) {
+          // Retry
+          return validateAllStreamers();
+        }
+      }
+      throw new Error(result.error || 'Validation failed');
+    }
+    
+    // Update validation status for each streamer
+    const validUsers = result.data;
+    let validCount = 0;
+    let invalidCount = 0;
+    
+    appData.streamers.forEach(streamer => {
+      const isValid = validUsers[streamer.name.toLowerCase()] !== undefined;
+      streamerValidationStatus[streamer.id] = isValid ? 'valid' : 'invalid';
+      if (isValid) validCount++;
+      else invalidCount++;
+    });
+    
+    // Update UI
+    renderStreamersList();
+    
+    // Show results
+    if (invalidCount === 0) {
+      elements.validationStatus.className = 'validation-status show success';
+      elements.validationStatus.textContent = `✓ All ${validCount} streamers are valid!`;
+    } else {
+      elements.validationStatus.className = 'validation-status show warning';
+      elements.validationStatus.textContent = `⚠ ${invalidCount} invalid, ${validCount} valid`;
+    }
+    
+    showToast(`Validation complete: ${validCount} valid, ${invalidCount} invalid`);
+    
+  } catch (error) {
+    elements.validationStatus.className = 'validation-status show error';
+    elements.validationStatus.textContent = `Error: ${error.message}`;
+    showToast('Validation failed');
+  } finally {
+    elements.validateStreamersBtn.disabled = false;
+    elements.validateStreamersBtn.classList.remove('validating');
+  }
 }
 
 // ===================================

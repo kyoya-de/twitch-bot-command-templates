@@ -1306,6 +1306,126 @@ body {
   margin-right: 2px;
 }
 
+/* Header button (for validate) */
+.card h2 .header-btn {
+  margin-left: auto;
+  padding: 6px 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all var(--transition-fast);
+}
+
+.card h2 .header-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--accent-primary);
+}
+
+.card h2 .header-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.card h2 .header-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.card h2 .header-btn.validating svg {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Validation status */
+.validation-status {
+  font-size: 12px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  border-radius: 6px;
+  display: none;
+}
+
+.validation-status.show {
+  display: block;
+}
+
+.validation-status.success {
+  background: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.validation-status.warning {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.validation-status.error {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* Invalid streamer styling */
+.streamer-item.invalid {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.streamer-item.invalid .streamer-item-name::before {
+  color: #ef4444;
+}
+
+.streamer-item .invalid-badge {
+  display: none;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 4px;
+  font-size: 11px;
+  color: #ef4444;
+  margin-left: 8px;
+}
+
+.streamer-item.invalid .invalid-badge {
+  display: flex;
+}
+
+.streamer-item .invalid-badge svg {
+  width: 12px;
+  height: 12px;
+}
+
+.streamer-item.valid .valid-badge {
+  display: flex;
+}
+
+.streamer-item .valid-badge {
+  display: none;
+  color: #22c55e;
+  margin-left: 8px;
+}
+
+.streamer-item .valid-badge svg {
+  width: 14px;
+  height: 14px;
+}
+
 .streamer-item button {
   width: 28px;
   height: 28px;

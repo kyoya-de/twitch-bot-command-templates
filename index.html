@@ -324,7 +324,15 @@
                 <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
               </svg>
               Your Streamers
+              <button class="header-btn" id="validate-streamers-btn" title="Validate all streamer names">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                  <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                Validate
+              </button>
             </h2>
+            <div class="validation-status" id="validation-status"></div>
             <div class="streamers-list" id="streamers-list">
               <p class="placeholder-text">No streamers added yet</p>
             </div>

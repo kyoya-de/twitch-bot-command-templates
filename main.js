@@ -182,6 +182,57 @@ function createWindow() {
     }
   });
 
+  // Twitch API - Validate Usernames
+  ipcMain.handle('twitch-validate-users', async (event, usernames, clientId) => {
+    try {
+      if (!twitchAccessToken) {
+        return { success: false, error: 'Not authenticated' };
+      }
+
+      if (usernames.length === 0) {
+        return { success: true, data: {} };
+      }
+
+      // Twitch API allows up to 100 logins per request
+      const loginParams = usernames.map(u => `login=${encodeURIComponent(u.toLowerCase())}`).join('&');
+      
+      const response = await fetch(
+        `https://api.twitch.tv/helix/users?${loginParams}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${twitchAccessToken}`,
+            'Client-Id': clientId
+          }
+        }
+      );
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          twitchAccessToken = null;
+          tokenExpiry = null;
+          return { success: false, error: 'Token expired', needsReauth: true };
+        }
+        return { success: false, error: 'Validation failed' };
+      }
+
+      const data = await response.json();
+      
+      // Create a map of valid usernames (lowercase for comparison)
+      const validUsers = {};
+      data.data.forEach(user => {
+        validUsers[user.login.toLowerCase()] = {
+          id: user.id,
+          displayName: user.display_name,
+          profileImageUrl: user.profile_image_url
+        };
+      });
+
+      return { success: true, data: validUsers };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  });
+
   // Twitch API - Validate Token
   ipcMain.handle('twitch-validate', async (event, clientId, clientSecret) => {
     try {

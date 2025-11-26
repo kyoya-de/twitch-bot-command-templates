@@ -19,6 +19,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Twitch API
   twitchGetToken: (clientId, clientSecret) => ipcRenderer.invoke('twitch-get-token', clientId, clientSecret),
   twitchSearch: (query, clientId) => ipcRenderer.invoke('twitch-search', query, clientId),
-  twitchValidate: (clientId, clientSecret) => ipcRenderer.invoke('twitch-validate', clientId, clientSecret)
+  twitchValidate: (clientId, clientSecret) => ipcRenderer.invoke('twitch-validate', clientId, clientSecret),
+  twitchValidateUsers: (usernames, clientId) => ipcRenderer.invoke('twitch-validate-users', usernames, clientId)
 });
 
