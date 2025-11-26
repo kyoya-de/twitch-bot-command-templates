@@ -7,6 +7,7 @@
 let appData = {
   templates: [],
   streamers: [],
+  groups: [],
   language: 'de', // Default to German
   settings: {
     twitchClientId: '',
@@ -23,6 +24,8 @@ const languages = {
 
 let selectedStreamers = new Set();
 let editingTemplateId = null;
+let editingGroupId = null;
+let selectedGroupStreamers = new Set();
 let searchDebounceTimer = null;
 let twitchAuthenticated = false;
 
@@ -64,6 +67,17 @@ const elements = {
   searchResults: document.getElementById('search-results'),
   searchStatus: document.getElementById('search-status'),
   
+  // Groups
+  groupForm: document.getElementById('group-form'),
+  groupName: document.getElementById('group-name'),
+  groupStreamerSelect: document.getElementById('group-streamer-select'),
+  clearGroupFormBtn: document.getElementById('clear-group-form-btn'),
+  groupsList: document.getElementById('groups-list'),
+  groupQuickSelect: document.getElementById('group-quick-select'),
+  groupButtons: document.getElementById('group-buttons'),
+  clearSelectionBtn: document.getElementById('clear-selection-btn'),
+  selectionCount: document.getElementById('selection-count'),
+  
   // Settings
   twitchSettingsForm: document.getElementById('twitch-settings-form'),
   twitchClientId: document.getElementById('twitch-client-id'),
@@ -101,6 +115,9 @@ async function init() {
   if (appData.settings.sidebarCollapsed === undefined) {
     appData.settings.sidebarCollapsed = false;
   }
+  if (!appData.groups) {
+    appData.groups = [];
+  }
   
   // Setup event listeners
   setupNavigation();
@@ -108,6 +125,7 @@ async function init() {
   setupGenerator();
   setupTemplates();
   setupStreamers();
+  setupGroups();
   setupSettings();
   
   // Initial render
@@ -180,6 +198,21 @@ function setupGenerator() {
   elements.languageToggle.querySelectorAll('.lang-btn').forEach(btn => {
     btn.addEventListener('click', () => setLanguage(btn.dataset.lang));
   });
+  
+  // Clear selection button
+  elements.clearSelectionBtn.addEventListener('click', clearStreamerSelection);
+}
+
+function clearStreamerSelection() {
+  selectedStreamers.clear();
+  updateStreamerSelectList();
+  updateGeneratedCommand();
+  updateSelectionCount();
+}
+
+function updateSelectionCount() {
+  const count = selectedStreamers.size;
+  elements.selectionCount.textContent = `${count} selected`;
 }
 
 async function setLanguage(lang) {
@@ -250,6 +283,7 @@ function buildCommandPreview(template) {
 function updateStreamerSelectList() {
   if (appData.streamers.length === 0) {
     elements.streamerSelectList.innerHTML = '<p class="placeholder-text">No streamers configured yet</p>';
+    elements.groupQuickSelect.style.display = 'none';
     return;
   }
   
@@ -276,8 +310,61 @@ function updateStreamerSelectList() {
         chip.classList.add('selected');
       }
       updateGeneratedCommand();
+      updateSelectionCount();
     });
   });
+  
+  // Update group quick select
+  updateGroupQuickSelect();
+  updateSelectionCount();
+}
+
+function updateGroupQuickSelect() {
+  if (appData.groups.length === 0) {
+    elements.groupQuickSelect.style.display = 'none';
+    return;
+  }
+  
+  elements.groupQuickSelect.style.display = 'block';
+  elements.groupButtons.innerHTML = appData.groups.map(group => {
+    const memberCount = group.streamerIds.filter(id => 
+      appData.streamers.some(s => s.id === id)
+    ).length;
+    
+    return `
+      <button class="group-btn" data-group-id="${group.id}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        ${escapeHtml(group.name)}
+        <span class="group-count">${memberCount}</span>
+      </button>
+    `;
+  }).join('');
+  
+  // Add click handlers
+  elements.groupButtons.querySelectorAll('.group-btn').forEach(btn => {
+    btn.addEventListener('click', () => selectGroup(btn.dataset.groupId));
+  });
+}
+
+function selectGroup(groupId) {
+  const group = appData.groups.find(g => g.id === groupId);
+  if (!group) return;
+  
+  // Add all group members to selection
+  group.streamerIds.forEach(streamerId => {
+    if (appData.streamers.some(s => s.id === streamerId)) {
+      selectedStreamers.add(streamerId);
+    }
+  });
+  
+  // Update UI
+  updateStreamerSelectList();
+  updateGeneratedCommand();
+  showToast(`Selected ${group.name}`);
 }
 
 function updateGeneratedCommand() {
@@ -592,6 +679,7 @@ async function deleteStreamer(id) {
 function renderStreamersList() {
   if (appData.streamers.length === 0) {
     elements.streamersList.innerHTML = '<p class="placeholder-text">No streamers added yet</p>';
+    renderGroupStreamerSelect();
     return;
   }
   
@@ -611,6 +699,163 @@ function renderStreamersList() {
   elements.streamersList.querySelectorAll('.streamer-item').forEach(item => {
     const id = item.dataset.id;
     item.querySelector('.delete-btn').addEventListener('click', () => deleteStreamer(id));
+  });
+  
+  // Also update group streamer select
+  renderGroupStreamerSelect();
+}
+
+// ===================================
+// Groups
+// ===================================
+function setupGroups() {
+  elements.groupForm.addEventListener('submit', saveGroup);
+  elements.clearGroupFormBtn.addEventListener('click', clearGroupForm);
+}
+
+function renderGroupStreamerSelect() {
+  if (appData.streamers.length === 0) {
+    elements.groupStreamerSelect.innerHTML = '<p class="placeholder-text">No streamers available</p>';
+    return;
+  }
+  
+  elements.groupStreamerSelect.innerHTML = appData.streamers.map(streamer => `
+    <label class="group-streamer-checkbox">
+      <input type="checkbox" value="${streamer.id}" ${selectedGroupStreamers.has(streamer.id) ? 'checked' : ''}>
+      <span>@${escapeHtml(streamer.name)}</span>
+    </label>
+  `).join('');
+  
+  // Add change handlers
+  elements.groupStreamerSelect.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+    checkbox.addEventListener('change', () => {
+      if (checkbox.checked) {
+        selectedGroupStreamers.add(checkbox.value);
+      } else {
+        selectedGroupStreamers.delete(checkbox.value);
+      }
+    });
+  });
+}
+
+async function saveGroup(e) {
+  e.preventDefault();
+  
+  const name = elements.groupName.value.trim();
+  if (!name) return;
+  
+  const streamerIds = Array.from(selectedGroupStreamers);
+  if (streamerIds.length === 0) {
+    showToast('Please select at least one streamer');
+    return;
+  }
+  
+  const group = {
+    id: editingGroupId || generateId(),
+    name: name,
+    streamerIds: streamerIds
+  };
+  
+  if (editingGroupId) {
+    // Update existing
+    const index = appData.groups.findIndex(g => g.id === editingGroupId);
+    if (index !== -1) {
+      appData.groups[index] = group;
+    }
+    editingGroupId = null;
+  } else {
+    // Add new
+    appData.groups.push(group);
+  }
+  
+  await saveData();
+  clearGroupForm();
+  renderGroupsList();
+  updateGroupQuickSelect();
+  showToast('Group saved!');
+}
+
+function clearGroupForm() {
+  elements.groupForm.reset();
+  editingGroupId = null;
+  selectedGroupStreamers.clear();
+  renderGroupStreamerSelect();
+}
+
+function editGroup(id) {
+  const group = appData.groups.find(g => g.id === id);
+  if (!group) return;
+  
+  editingGroupId = id;
+  elements.groupName.value = group.name;
+  selectedGroupStreamers = new Set(group.streamerIds);
+  renderGroupStreamerSelect();
+  
+  // Scroll to form
+  elements.groupName.focus();
+}
+
+async function deleteGroup(id) {
+  appData.groups = appData.groups.filter(g => g.id !== id);
+  await saveData();
+  renderGroupsList();
+  updateGroupQuickSelect();
+  showToast('Group deleted');
+}
+
+function renderGroupsList() {
+  if (appData.groups.length === 0) {
+    elements.groupsList.innerHTML = '<p class="placeholder-text">No groups created yet</p>';
+    return;
+  }
+  
+  elements.groupsList.innerHTML = appData.groups.map(group => {
+    // Get member names (filter out deleted streamers)
+    const members = group.streamerIds
+      .map(id => appData.streamers.find(s => s.id === id))
+      .filter(Boolean);
+    
+    return `
+      <div class="group-item" data-id="${group.id}">
+        <div class="group-item-header">
+          <div class="group-item-name">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            ${escapeHtml(group.name)}
+          </div>
+          <div class="group-item-actions">
+            <button class="edit-btn" title="Edit">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+            </button>
+            <button class="delete-btn" title="Delete">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="group-item-members">
+          ${members.length > 0 
+            ? members.map(m => `<span class="group-member-tag">${escapeHtml(m.name)}</span>`).join('')
+            : '<span class="placeholder-text" style="padding: 0; font-size: 12px;">No members</span>'
+          }
+        </div>
+      </div>
+    `;
+  }).join('');
+  
+  // Add click handlers
+  elements.groupsList.querySelectorAll('.group-item').forEach(item => {
+    const id = item.dataset.id;
+    item.querySelector('.edit-btn').addEventListener('click', () => editGroup(id));
+    item.querySelector('.delete-btn').addEventListener('click', () => deleteGroup(id));
   });
 }
 
@@ -930,6 +1175,8 @@ function showToast(message) {
 function renderAll() {
   renderTemplatesList();
   renderStreamersList();
+  renderGroupsList();
+  renderGroupStreamerSelect();
   updateTemplateSelect();
   updateStreamerSelectList();
   updateLanguageToggle();
