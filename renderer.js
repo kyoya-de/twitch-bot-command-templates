@@ -25,6 +25,7 @@ const languages = {
 let selectedStreamers = new Set();
 let editingTemplateId = null;
 let editingGroupId = null;
+let editingStreamerId = null;
 let selectedGroupStreamers = new Set();
 let searchDebounceTimer = null;
 let twitchAuthenticated = false;
@@ -660,7 +661,16 @@ async function addStreamer(e) {
   e.preventDefault();
   
   const name = elements.streamerName.value.trim().replace(/^@/, '');
-  await addStreamerByName(name);
+  
+  if (editingStreamerId) {
+    // Update existing streamer
+    await updateStreamerName(editingStreamerId, name);
+    editingStreamerId = null;
+  } else {
+    // Add new streamer
+    await addStreamerByName(name);
+  }
+  
   elements.streamerForm.reset();
 }
 
@@ -682,6 +692,28 @@ async function addStreamerByName(name) {
   renderStreamersList();
   updateStreamerSelectList();
   showToast('Streamer added!');
+}
+
+async function updateStreamerName(id, newName) {
+  if (!newName) {
+    showToast('Name cannot be empty');
+    return;
+  }
+  
+  // Check for duplicates (excluding current streamer)
+  if (appData.streamers.some(s => s.id !== id && s.name.toLowerCase() === newName.toLowerCase())) {
+    showToast('Streamer with this name already exists!');
+    return;
+  }
+  
+  const streamer = appData.streamers.find(s => s.id === id);
+  if (streamer) {
+    streamer.name = newName;
+    await saveData();
+    renderStreamersList();
+    updateStreamerSelectList();
+    showToast('Streamer updated!');
+  }
 }
 
 async function deleteStreamer(id) {
@@ -722,12 +754,20 @@ function renderStreamersList() {
           </svg>
           Invalid
         </span>
-        <button class="delete-btn" title="Remove">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
+        <div class="streamer-item-actions">
+          <button class="edit-btn" title="Edit">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+          </button>
+          <button class="delete-btn" title="Remove">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
       </div>
     `;
   }).join('');
@@ -735,11 +775,26 @@ function renderStreamersList() {
   // Add click handlers
   elements.streamersList.querySelectorAll('.streamer-item').forEach(item => {
     const id = item.dataset.id;
+    item.querySelector('.edit-btn').addEventListener('click', () => editStreamer(id));
     item.querySelector('.delete-btn').addEventListener('click', () => deleteStreamer(id));
   });
   
   // Also update group streamer select
   renderGroupStreamerSelect();
+}
+
+function editStreamer(id) {
+  const streamer = appData.streamers.find(s => s.id === id);
+  if (!streamer) return;
+  
+  editingStreamerId = id;
+  elements.streamerName.value = streamer.name;
+  elements.streamerName.focus();
+  
+  // Clear validation status for this streamer since we're editing
+  delete streamerValidationStatus[id];
+  
+  showToast('Editing streamer - update the name and click Add');
 }
 
 async function validateAllStreamers() {

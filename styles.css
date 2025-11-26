@@ -1283,7 +1283,7 @@ body {
 .streamer-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
   padding: 14px 16px;
   background: var(--bg-elevated);
   border: 1px solid var(--border-subtle);
@@ -1298,6 +1298,7 @@ body {
 .streamer-item-name {
   font-weight: 500;
   color: var(--text-primary);
+  flex-shrink: 0;
 }
 
 .streamer-item-name::before {
@@ -1426,7 +1427,13 @@ body {
   height: 14px;
 }
 
-.streamer-item button {
+.streamer-item-actions {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.streamer-item-actions button {
   width: 28px;
   height: 28px;
   border: none;
@@ -1440,12 +1447,17 @@ body {
   transition: all var(--transition-fast);
 }
 
-.streamer-item button:hover {
+.streamer-item-actions button:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.streamer-item-actions button.delete-btn:hover {
   background: rgba(239, 68, 68, 0.1);
   color: #ef4444;
 }
 
-.streamer-item button svg {
+.streamer-item-actions button svg {
   width: 14px;
   height: 14px;
 }
